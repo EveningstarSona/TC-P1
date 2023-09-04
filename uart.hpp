@@ -8,25 +8,32 @@
 #include "config.hpp"
 #include <cmath>
 
-class UART_RX
-{
+enum class State { Espera, ComecoRecebimento, Recebimento, FimRecebimento }; 
+
+class UART_RX {
 public:
-    UART_RX(std::function<void(uint8_t)> get_byte) : get_byte(get_byte) {inFrame = 0;}
-    ~UART_RX() {while(inFrame++ < 9) {byteAtual.push_back(0);} get_byte(conversor(byteAtual));}
+    UART_RX(std::function<void(uint8_t)> get_byte) : get_byte(get_byte) {
+        bits_count = 0;
+        sample_count = 0;
+        byte = 0;
+        byte_counter = 0;
+        State state = State::Espera;
+    }
+    ~UART_RX() {}
     void put_samples(const unsigned int *buffer, unsigned int n);
-    uint8_t conversor(std::vector<unsigned int> bitAtual){ int valorfinal = 0; for(int i = 0;i<8;i++){ valorfinal += (bitAtual[i]) ? pow(2,7-i) : 0; }
-    // std::cout<<valorfinal<< " ";
-    return (uint8_t) valorfinal;
-}
+    int check_bits();
 private:
-    std::vector<unsigned int> classBuffer = {};
-    std::vector<unsigned int> byteAtual = {};
-    unsigned int inFrame;
     std::function<void(uint8_t)> get_byte;
+    unsigned int bits_count;
+    unsigned int sample_count;
+    uint8_t byte;
+    std::vector<unsigned int> last_bits;
+    unsigned int byte_counter;
+    State state;
+
 };
 
-class UART_TX
-{
+class UART_TX {
 public:
     void put_byte(uint8_t byte);
     void get_samples(unsigned int *buffer, unsigned int n);
